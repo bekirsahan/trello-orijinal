@@ -1,0 +1,80 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  name         String
+  role         String          @default("USER") // ADMIN | USER
+  avatar       String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  projects     Project[]       @relation("UserProjects")
+  memberships  ProjectMember[]
+  assignedTasks Task[]         @relation("TaskAssignee")
+  createdTasks Task[]          @relation("TaskCreator")
+  logs         TaskLog[]
+}
+
+model Project {
+  id          String          @id @default(uuid())
+  title       String
+  description String?
+  color       String          @default("#4f46e5")
+  ownerId     String
+  owner       User            @relation("UserProjects", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     ProjectMember[]
+  tasks       Task[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("MEMBER") // OWNER | MEMBER | VIEWER
+  joinedAt  DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  status      String    @default("todo") // todo | doing | done
+  priority    String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  orderIndex  Int       @default(0)
+  dueDate     DateTime?
+  tags        String?   // comma separated tags e.g. "Backend,DB"
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdById String
+  creator     User      @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  logs        TaskLog[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TaskLog {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // CREATED | STATUS_CHANGE | UPDATED | ASSIGNEE_CHANGE
+  details   String
+  timestamp DateTime @default(now())
+}

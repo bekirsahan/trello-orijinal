@@ -1,0 +1,12 @@
+{
+  "name": "trello-clone-fake-api",
+  "version": "1.0.0",
+  "description": "Fake API server using JSON-Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "json-server --watch db.json --port 5001 --cors"
+  },
+  "dependencies": {
+    "json-server": "^0.17.4"
+  }
+}
